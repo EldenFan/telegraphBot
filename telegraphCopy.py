@@ -13,13 +13,11 @@ async def fetch_html(url: str) -> str:
             return await response.text()
 
 
-async def copy_telegraph(url: str, author: str) -> str:
+async def copy_telegraph(url: str, title: str, author: str) -> str:
     html = await fetch_html(url)
     if not html:
         return "Не удалось загрузить статью."
     soup = BeautifulSoup(html, "html.parser")
-    title = str(soup.find("h1"))
-    title = title[title.find(">") + 1:title.rfind("<")]
     content = soup.find("article")
     if not content:
         return "Не удалось найти содержимое статьи."

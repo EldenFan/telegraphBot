@@ -26,9 +26,18 @@ async def telegraph_url(message: Message, state: FSMContext) -> None:
     await message.answer("Копирую статью, подождите...")
     data = await state.get_data()
     url = data.get("url")
-    new_url = await copy_telegraph(url, author=message.text)
+    title = data.get("title")
+    new_url = await copy_telegraph(url=url, title=title, author=message.text)
     await message.answer(new_url)
     await state.clear()
+
+
+@dp.message(CopyTelegraphStates.waiting_for_title)
+async def get_author(message: Message, state: FSMContext) -> None:
+    await message.answer("Введите автора: ")
+    await state.update_data(title = message.text)
+    await state.set_state(CopyTelegraphStates.waiting_for_author)
+
 
 @dp.message(F.text.contains("https://telegra.ph/"))
 async def telegraph_handler(message: Message, state: FSMContext) -> None:
@@ -38,7 +47,7 @@ async def telegraph_handler(message: Message, state: FSMContext) -> None:
         await message.answer("Так не должно быть. Обратись в поддержку")
         return
     url = match.group(0)
-    get_author(message, url, state)
+    get_title(message, url, state)
     
 
 @dp.message(F.content_type == "text")
@@ -47,7 +56,7 @@ async def url_handler(message: Message, state: FSMContext) -> None:
     if entities:
         for entity in entities:
             url = entity.url
-            await get_author(message, url, state)
+            await get_title(message, url, state)
     else:
         all_handler(message)
 
@@ -57,10 +66,10 @@ async def all_handler(message: Message) -> None:
     await message.answer("Я не знаю, что с этим делать. Отправте ссылка на telegraph статью. Она должна содержать https://telegra.ph/")
 
 
-async def get_author(message: Message, url: str, state: FSMContext) -> None:
-    await message.answer("Введите автора:")
+async def get_title(message: Message, url: str, state: FSMContext) -> None:
+    await message.answer("Введите название:")
     await state.update_data(url = url)
-    await state.set_state(CopyTelegraphStates.waiting_for_author)
+    await state.set_state(CopyTelegraphStates.waiting_for_title)
 
 
 async def main() -> None:
